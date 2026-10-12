@@ -38,3 +38,4 @@ Pearl Labs LLC · ARGUS.
   - **What it does:** pins the bootstrap method that rule v1 §4 left unspecified: the random generator, the resampling and the percentile method. No decision threshold changes.
   - **Timing:** published before the first counted week resolves on 2026-10-18.
   - **Status:** proposed, pending owner approval.
+  - **Approved by the owner on 2026-10-12, before any counted week resolved.** It is in force with rule v1.
