@@ -34,3 +34,7 @@ Pearl Labs LLC · ARGUS.
 - **2026-10-12, `SCORING-RULE-v1.md`.** The file's last two lines (`EOF` and a `cd … shasum` shell command) are an editing artifact from when the file was written. They are not part of the rule.
   - The file is kept byte-for-byte as approved and published, so its sha256 `49f3dffb…9dbb` stays verifiable.
   - The rule is everything above those two lines.
+- **2026-10-12, proposed `SCORING-RULE-v1-ADDENDUM-1.md`** (sha256 `c5949b414c08934d709b28621f67b640ed7782a4e088a784eca9692cd1e0a943`).
+  - **What it does:** pins the bootstrap method that rule v1 §4 left unspecified: the random generator, the resampling and the percentile method. No decision threshold changes.
+  - **Timing:** published before the first counted week resolves on 2026-10-18.
+  - **Status:** proposed, pending owner approval.
