@@ -29,3 +29,8 @@ A public, append-only record of ARGUS's weekly forecasts of the Ukraine front li
 - **Disclosure.** The 2026-10-11 hash was first published here on 2026-10-12, one day after issue. Its earlier commitment is a private git commit (2026-10-11T16:21:14Z) and the separate confirmer's record. From now on, each hash is published here when it is issued.
 
 Pearl Labs LLC · ARGUS.
+
+## Errata
+- **2026-10-12, `SCORING-RULE-v1.md`.** The file's last two lines (`EOF` and a `cd … shasum` shell command) are an editing artifact from when the file was written. They are not part of the rule.
+  - The file is kept byte-for-byte as approved and published, so its sha256 `49f3dffb…9dbb` stays verifiable.
+  - The rule is everything above those two lines.
