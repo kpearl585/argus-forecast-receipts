@@ -20,6 +20,9 @@ A public, append-only record of ARGUS's weekly forecasts of the Ukraine front li
 - **Skill claim.** After 8 independently confirmed weeks, ARGUS claims skill for G only if G beats climatology in Brier score with a week-blocked bootstrap 95% interval entirely above zero.
 - **Otherwise** this page will say there is no demonstrated skill.
 
+## Advance forecast (second record)
+From 2026-10-25 a separate, pre-registered forecast of how much ground (km² per cell) is gained each week runs in `advance/`. It has its own rule (sha256 `2e78412f…e320`) and its own receipts. Its honest expectation is stated up front in `advance/README.md`.
+
 ## What this is not
 - **Not evidence of skill yet.** Today there are 0 counted weeks scored.
   - The first row (2026-10-02) was issued before an independent confirmer existed, so it never counts.
