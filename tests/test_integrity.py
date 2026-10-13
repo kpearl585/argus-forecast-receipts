@@ -182,6 +182,32 @@ class IntegrityTests(unittest.TestCase):
         self.append_advance(lambda cell: cell.__setitem__("input_polygons", []))
         self.reject("sealed AB/A/CLIM/PERS")
 
+    def test_reveal_and_parent_directory_symlinks_fail(self):
+        # New symlinked JSON used to pass once, then fail the next history check.
+        data = json.loads(self.reveal().read_text())
+        data.update(forecast_id="mdo-front-2026-10-18", issued_for_map_date="2026-10-18", resolves_on_map_date="2026-10-25")
+        target = self.root / "candidate.json"
+        target.write_text(json.dumps(data))
+        self.append("receipts.csv", f"mdo-front-2026-10-18,{forecast_hash(data)},2026-10-18,2026-10-25,yes,2026-10-18,pending")
+        link = self.root / "reveals/mdo-front-2026-10-18.json"
+        link.symlink_to(target)
+        with self.subTest("new reveal file"):
+            self.reject("symlink")
+        link.unlink()
+        target.unlink()
+        # Parent symlinks hid Git-level deletions behind identical target bytes.
+        copied = self.root / "copied-advance"
+        (self.root / "advance").rename(copied)
+        (self.root / "advance").symlink_to(copied, target_is_directory=True)
+        with self.subTest("protected parent directory"):
+            self.reject("symlink")
+
+    def test_nested_reveal_json_fails(self):
+        nested = self.root / "reveals/nested"
+        nested.mkdir()
+        (nested / "unchecked.json").write_text('{"inputs": "not a four-key forecast"}')
+        self.reject("flat reveal directory")
+
     def test_invalid_base_fails_closed(self):
         with self.assertRaises(subprocess.CalledProcessError):
             check_history(self.root, "--not-a-commit")

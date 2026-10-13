@@ -38,8 +38,18 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def regular_file(root, filename):
+    path = root / filename
+    current = root
+    for part in Path(filename).parts:
+        current = current / part
+        require(not current.is_symlink(), f"{filename}: symlinks cannot store published records")
+    require(path.is_file(), f"{filename}: published record deleted or replaced")
+    return path
+
+
 def read_rows(root, filename, columns):
-    raw = (root / filename).read_bytes()
+    raw = regular_file(root, filename).read_bytes()
     require(raw.endswith(b"\n"), f"{filename}: must end in a newline before appending")
     reader = csv.DictReader(io.StringIO(raw.decode("utf-8"), newline=""), strict=True)
     require(reader.fieldnames == columns.split(","), f"{filename}: unexpected CSV header")
@@ -124,7 +134,14 @@ def check_lane(root, prefix):
         by_id[fid] = row
 
     reveals = {}
-    for path in sorted((root / (prefix + "reveals")).glob("*.json")):
+    reveal_dir = root / (prefix + "reveals")
+    require(not reveal_dir.is_symlink(), f"{prefix}reveals: symlinks cannot store published records")
+    for entry in reveal_dir.rglob("*"):
+        require(not entry.is_symlink(), f"{entry.name}: symlinks cannot store published records")
+        require(entry.parent == reveal_dir and entry.is_file(),
+                f"{entry.name}: JSON must be published in the flat reveal directory")
+    for path in sorted(reveal_dir.glob("*.json")):
+        regular_file(root, path.relative_to(root))
         data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys)
         require(set(data) == {"forecast_id", "issued_for_map_date", "resolves_on_map_date", "cells"},
                 f"{path.name}: reveal must contain exactly the four published keys")
@@ -187,8 +204,7 @@ def check_history(root, base):
         if filename not in TABLES and not immutable:
             continue
         old = subprocess.check_output(["git", "-C", str(root), "show", f"{revision}:{filename}"])
-        path = root / filename
-        require(path.is_file() and not path.is_symlink(), f"{filename}: published record deleted or replaced")
+        path = regular_file(root, filename)
         new = path.read_bytes()
         if immutable:
             require(new == old, f"{filename}: published bytes are immutable; publish a new version or erratum")
@@ -199,7 +215,7 @@ def check_history(root, base):
 def check_integrity(root, base=None):
     root = Path(root)
     for filename, digest in RULE_PINS.items():
-        require(hashlib.sha256((root / filename).read_bytes()).hexdigest() == digest,
+        require(hashlib.sha256(regular_file(root, filename).read_bytes()).hexdigest() == digest,
                 f"{filename}: approved scoring rule hash changed")
     for prefix in ("", "advance/"):
         check_lane(root, prefix)
