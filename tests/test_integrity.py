@@ -54,8 +54,11 @@ class IntegrityTests(unittest.TestCase):
         self.assertEqual(forecast_hash(json.loads(self.reveal().read_text())),
                          "d4ddcd56f41b97191166ee5b949c346fa716df4d0fca8944e2b1a52c2790821b")
 
+    # Synthetic ids far in the future so the tests never collide with a real, later-published week.
+    FUTURE = "mdo-front-2099-01-04"
+
     def test_append_receipt_allowed(self):
-        self.append("receipts.csv", "mdo-front-2026-10-18," + "a" * 64 + ",2026-10-18,2026-10-25,yes,2026-10-18,pending")
+        self.append("receipts.csv", f"{self.FUTURE}," + "a" * 64 + ",2099-01-04,2099-01-11,yes,2099-01-04,pending")
         check_integrity(self.root, "HEAD")
 
     def test_score_edit_fails_even_when_schema_valid(self):
@@ -143,7 +146,8 @@ class IntegrityTests(unittest.TestCase):
         self.reject("advance counting begins")
 
     def test_scores_cannot_precede_reveal(self):
-        self.append("scores.csv", "mdo-front-2026-10-11,yes,176,1,G,0.01,0.02,0.5,1,0.02")
+        self.append("receipts.csv", f"{self.FUTURE}," + "a" * 64 + ",2099-01-04,2099-01-11,yes,2099-01-04,pending")
+        self.append("scores.csv", f"{self.FUTURE},yes,176,1,G,0.01,0.02,0.5,1,0.02")
         self.reject("verified reveal before scores")
 
     def append_advance(self, mutate=None):
@@ -151,15 +155,15 @@ class IntegrityTests(unittest.TestCase):
                 "CLIM": {"q": [0.2] * 19}, "PERS": {"value": 0.2}}
         if mutate:
             mutate(cell)
-        fid = "mdo-front-adv-2026-10-25"
-        payload = {"forecast_id": fid, "issued_for_map_date": "2026-10-25", "resolves_on_map_date": "2026-11-01", "cells": {"synthetic_cell": cell}}
-        self.append("advance/receipts.csv", f"{fid},{forecast_hash(payload)},2026-10-25,2026-11-01,yes,2026-10-25,pending")
+        fid = "mdo-front-adv-2099-01-04"
+        payload = {"forecast_id": fid, "issued_for_map_date": "2099-01-04", "resolves_on_map_date": "2099-01-11", "cells": {"synthetic_cell": cell}}
+        self.append("advance/receipts.csv", f"{fid},{forecast_hash(payload)},2099-01-04,2099-01-11,yes,2099-01-04,pending")
         (self.root / f"advance/reveals/{fid}.json").write_text(json.dumps(payload))
         self.append("advance/scores.csv", f"{fid},yes,1,AB,0.1,0.2")
 
     def test_advance_publication_and_zero_baseline_allowed(self):
         self.append_advance()
-        self.append("advance/scores.csv", "mdo-front-adv-2026-10-25,yes,1,ZERO,0.1,0.2")
+        self.append("advance/scores.csv", "mdo-front-adv-2099-01-04,yes,1,ZERO,0.1,0.2")
         check_integrity(self.root, "HEAD")
 
     def test_advance_wrong_quantile_count_fails(self):
@@ -185,11 +189,11 @@ class IntegrityTests(unittest.TestCase):
     def test_reveal_and_parent_directory_symlinks_fail(self):
         # New symlinked JSON used to pass once, then fail the next history check.
         data = json.loads(self.reveal().read_text())
-        data.update(forecast_id="mdo-front-2026-10-18", issued_for_map_date="2026-10-18", resolves_on_map_date="2026-10-25")
+        data.update(forecast_id="mdo-front-2099-01-04", issued_for_map_date="2099-01-04", resolves_on_map_date="2099-01-11")
         target = self.root / "candidate.json"
         target.write_text(json.dumps(data))
-        self.append("receipts.csv", f"mdo-front-2026-10-18,{forecast_hash(data)},2026-10-18,2026-10-25,yes,2026-10-18,pending")
-        link = self.root / "reveals/mdo-front-2026-10-18.json"
+        self.append("receipts.csv", f"mdo-front-2099-01-04,{forecast_hash(data)},2099-01-04,2099-01-11,yes,2099-01-04,pending")
+        link = self.root / "reveals/mdo-front-2099-01-04.json"
         link.symlink_to(target)
         with self.subTest("new reveal file"):
             self.reject("symlink")
