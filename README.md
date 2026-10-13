@@ -33,6 +33,28 @@ From 2026-10-25 a separate, pre-registered forecast of how much ground (km² per
 
 Pearl Labs LLC · ARGUS.
 
+## Verify the public record
+
+Before publishing, run `python3 check_integrity.py --base origin/main` and
+`python3 -m unittest discover -s tests -p 'test_*.py'`. These use only Python's
+standard library and Git; they do not fetch source data, run models or rescore
+forecasts. Fetch `origin/main` first if your checkout is behind.
+
+The integrity check preserves the exact published CSV prefix and reveal bytes,
+verifies reveal hashes against receipts, validates table schemas and numeric
+ranges, and pins the three approved scoring-rule artifacts, including the
+documented editing artifact in rule v1. Corrections belong in a new version or
+an erratum; do not rewrite an existing receipt, score, reveal or approved rule.
+This validates publication integrity, not the truth of outcomes or the
+independence of confirmations.
+
+The `receipt-integrity` pull-request status uses one standard Linux runner with
+a two-minute timeout, cancels superseded runs and skips validators for unrelated
+paths. There are no scheduled or post-merge runs, dependency installs, database
+services or model jobs. Public-repository standard GitHub-hosted runners have no
+Actions minute charge. The workflow runs on every PR so requiring this status
+does not leave documentation-only PRs waiting on a path-filtered check.
+
 ## Errata
 - **2026-10-12, `SCORING-RULE-v1.md`.** The file's last two lines (`EOF` and a `cd … shasum` shell command) are an editing artifact from when the file was written. They are not part of the rule.
   - The file is kept byte-for-byte as approved and published, so its sha256 `49f3dffb…9dbb` stays verifiable.
