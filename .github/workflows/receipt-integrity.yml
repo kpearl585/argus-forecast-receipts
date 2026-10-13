@@ -1,0 +1,48 @@
+name: Public receipt integrity
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: receipt-integrity-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  receipt-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Check whether public records or guards changed
+        id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess
+          base = os.environ["BASE_SHA"]
+          assert re.fullmatch(r"[0-9a-f]{40}", base), "invalid PR base commit"
+          files = subprocess.check_output(["git", "diff", "--name-only", base, "HEAD"], text=True).splitlines()
+          affected = any(
+              name in {"receipts.csv", "scores.csv", "verify.py", "check_integrity.py", ".github/workflows/receipt-integrity.yml"}
+              or name.startswith(("reveals/", "advance/", "SCORING-RULE", "tests/"))
+              for name in files
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"affected={str(affected).lower()}\n")
+          print("Integrity inputs changed." if affected else "No integrity inputs changed; status passes without running validators.")
+          PY
+      - name: Verify append-only bytes, schemas, reveal hashes and approved rules
+        if: steps.paths.outputs.affected == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 check_integrity.py --base "$BASE_SHA"
+      - name: Run offline mutation tests
+        if: steps.paths.outputs.affected == 'true'
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
